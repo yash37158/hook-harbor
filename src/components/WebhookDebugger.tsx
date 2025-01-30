@@ -9,6 +9,7 @@ import { Copy, RefreshCw, Trash2, Download } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { v4 as uuidv4 } from 'uuid';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const DEFAULT_WEBHOOK_URL = `https://${window.location.hostname}/webhook`;
 
@@ -26,6 +27,7 @@ const WebhookDebugger = () => {
   const [requests, setRequests] = useState<WebhookRequest[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<WebhookRequest | null>(null);
   const [webhookUrl, setWebhookUrl] = useState(DEFAULT_WEBHOOK_URL);
+  const [isListening, setIsListening] = useState(true);
   const { toast } = useToast();
 
   // Simulated webhook data for testing
@@ -87,6 +89,14 @@ const WebhookDebugger = () => {
     });
   };
 
+  const toggleListening = () => {
+    setIsListening(!isListening);
+    toast({
+      title: isListening ? "Stopped listening" : "Started listening",
+      description: isListening ? "Webhook listener has been stopped." : "Now listening for webhook requests.",
+    });
+  };
+
   return (
     <div className="min-h-[calc(100vh-8rem)] p-6 flex flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -111,11 +121,25 @@ const WebhookDebugger = () => {
           <Button variant="outline" size="icon" onClick={downloadRequests}>
             <Download className="h-4 w-4" />
           </Button>
-          <Button variant="outline" size="icon">
+          <Button 
+            variant="outline" 
+            size="icon" 
+            onClick={toggleListening}
+            className={isListening ? 'animate-spin' : ''}
+          >
             <RefreshCw className="h-4 w-4" />
           </Button>
         </div>
       </div>
+
+      {isListening && (
+        <Alert>
+          <AlertDescription className="flex items-center gap-2">
+            <RefreshCw className="h-4 w-4 animate-spin" />
+            Listening for webhook requests...
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="flex gap-6 flex-1">
         <Card className="w-1/3">
