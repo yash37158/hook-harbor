@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 import RequestList from './RequestList';
 import RequestDetails from './RequestDetails';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,7 @@ import { Copy, RefreshCw, Trash2, Download } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 
-const DEFAULT_WEBHOOK_URL = `https://${window.location.hostname}/webhook`;
+const DEFAULT_WEBHOOK_URL = 'https://your-webhook-url.com/webhook';
 
 export type WebhookRequest = {
   id: string;
