@@ -7,8 +7,9 @@ import RequestDetails from './RequestDetails';
 import { Button } from '@/components/ui/button';
 import { Copy, RefreshCw } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { Input } from '@/components/ui/input';
 
-const WEBHOOK_URL = 'https://your-webhook-url.com/webhook';
+const DEFAULT_WEBHOOK_URL = 'https://your-webhook-url.com/webhook';
 
 export type WebhookRequest = {
   id: string;
@@ -23,10 +24,11 @@ export type WebhookRequest = {
 const WebhookDebugger = () => {
   const [requests, setRequests] = useState<WebhookRequest[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<WebhookRequest | null>(null);
+  const [webhookUrl, setWebhookUrl] = useState(DEFAULT_WEBHOOK_URL);
   const { toast } = useToast();
 
   const copyWebhookUrl = () => {
-    navigator.clipboard.writeText(WEBHOOK_URL);
+    navigator.clipboard.writeText(webhookUrl);
     toast({
       title: "URL copied to clipboard",
       description: "Your webhook URL has been copied to the clipboard.",
@@ -39,7 +41,12 @@ const WebhookDebugger = () => {
         <div>
           <h1 className="text-2xl font-bold mb-2">Webhook Debugger</h1>
           <div className="flex items-center gap-2">
-            <code className="px-2 py-1 rounded bg-muted">{WEBHOOK_URL}</code>
+            <Input 
+              value={webhookUrl}
+              onChange={(e) => setWebhookUrl(e.target.value)}
+              className="min-w-[400px] font-mono text-sm"
+              placeholder={DEFAULT_WEBHOOK_URL}
+            />
             <Button variant="outline" size="icon" onClick={copyWebhookUrl}>
               <Copy className="h-4 w-4" />
             </Button>
