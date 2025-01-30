@@ -1,14 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import RequestList from './RequestList';
 import RequestDetails from './RequestDetails';
 import { Button } from '@/components/ui/button';
-import { Copy, RefreshCw, Trash2, Download } from 'lucide-react';
+import { Copy, RefreshCw, Trash2, Download, AlertCircle } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-const DEFAULT_WEBHOOK_URL = `https://${window.location.hostname}/webhook`;
+const DEFAULT_WEBHOOK_URL = `${window.location.protocol}//${window.location.host}/api/webhooks`;
 
 export type WebhookRequest = {
   id: string;
@@ -24,7 +25,32 @@ const WebhookDebugger = () => {
   const [requests, setRequests] = useState<WebhookRequest[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<WebhookRequest | null>(null);
   const [webhookUrl, setWebhookUrl] = useState(DEFAULT_WEBHOOK_URL);
+  const [isListening, setIsListening] = useState(true);
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (!isListening) return;
+
+    const eventSource = new EventSource('/api/webhooks/events');
+    
+    eventSource.onmessage = (event) => {
+      const request = JSON.parse(event.data);
+      setRequests(prev => [request, ...prev]);
+      toast({
+        title: "New webhook received",
+        description: `${request.method} request to ${request.path}`,
+      });
+    };
+
+    eventSource.onerror = () => {
+      console.log('SSE connection error');
+      setIsListening(false);
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, [isListening]);
 
   const copyWebhookUrl = () => {
     navigator.clipboard.writeText(webhookUrl);
@@ -60,11 +86,28 @@ const WebhookDebugger = () => {
     });
   };
 
+  const toggleListening = () => {
+    setIsListening(!isListening);
+    toast({
+      title: isListening ? "Stopped listening" : "Started listening",
+      description: isListening ? "No longer receiving webhook requests." : "Now receiving webhook requests.",
+    });
+  };
+
   return (
     <div className="min-h-[calc(100vh-8rem)] p-6 flex flex-col gap-6">
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Important Note</AlertTitle>
+        <AlertDescription>
+          To receive webhooks, you need to send requests to <strong>{webhookUrl}</strong>, not webhook-test.com. 
+          The webhook-test.com URL sends requests to their server, not yours.
+        </AlertDescription>
+      </Alert>
+
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold mb-2">Webhook URL</h2>
+          <h2 className="text-xl font-semibold mb-2">Your Webhook URL</h2>
           <div className="flex items-center gap-2">
             <Input 
               value={webhookUrl}
@@ -84,8 +127,12 @@ const WebhookDebugger = () => {
           <Button variant="outline" size="icon" onClick={downloadRequests}>
             <Download className="h-4 w-4" />
           </Button>
-          <Button variant="outline" size="icon">
-            <RefreshCw className="h-4 w-4" />
+          <Button 
+            variant={isListening ? "default" : "outline"} 
+            size="icon" 
+            onClick={toggleListening}
+          >
+            <RefreshCw className={`h-4 w-4 ${isListening ? 'animate-spin' : ''}`} />
           </Button>
         </div>
       </div>
