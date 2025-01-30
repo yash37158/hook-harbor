@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -8,8 +8,9 @@ import { Button } from '@/components/ui/button';
 import { Copy, RefreshCw, Trash2, Download } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
+import { v4 as uuidv4 } from 'uuid';
 
-const DEFAULT_WEBHOOK_URL = 'https://your-webhook-url.com/webhook';
+const DEFAULT_WEBHOOK_URL = `https://${window.location.hostname}/webhook`;
 
 export type WebhookRequest = {
   id: string;
@@ -26,6 +27,31 @@ const WebhookDebugger = () => {
   const [selectedRequest, setSelectedRequest] = useState<WebhookRequest | null>(null);
   const [webhookUrl, setWebhookUrl] = useState(DEFAULT_WEBHOOK_URL);
   const { toast } = useToast();
+
+  // Simulated webhook data for testing
+  useEffect(() => {
+    // Add a sample webhook request for demonstration
+    const sampleRequest: WebhookRequest = {
+      id: uuidv4(),
+      method: 'POST',
+      path: '/webhook',
+      timestamp: new Date(),
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'Mozilla/5.0'
+      },
+      body: {
+        event: 'user.created',
+        data: {
+          id: 123,
+          name: 'John Doe',
+          email: 'john@example.com'
+        }
+      },
+      queryParams: {}
+    };
+    setRequests(prev => [...prev, sampleRequest]);
+  }, []);
 
   const copyWebhookUrl = () => {
     navigator.clipboard.writeText(webhookUrl);
