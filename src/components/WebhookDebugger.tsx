@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
 import RequestList from './RequestList';
 import RequestDetails from './RequestDetails';
 import { Button } from '@/components/ui/button';
@@ -30,30 +29,44 @@ const WebhookDebugger = () => {
   const [isListening, setIsListening] = useState(true);
   const { toast } = useToast();
 
-  // Simulated webhook data for testing
   useEffect(() => {
-    // Add a sample webhook request for demonstration
-    const sampleRequest: WebhookRequest = {
-      id: uuidv4(),
-      method: 'POST',
-      path: '/webhook',
-      timestamp: new Date(),
-      headers: {
-        'Content-Type': 'application/json',
-        'User-Agent': 'Mozilla/5.0'
-      },
-      body: {
-        event: 'user.created',
-        data: {
-          id: 123,
-          name: 'John Doe',
-          email: 'john@example.com'
-        }
-      },
-      queryParams: {}
+    if (!isListening) return;
+
+    const eventSource = new EventSource('/api/webhooks/events');
+
+    eventSource.onmessage = (event) => {
+      try {
+        const webhookData = JSON.parse(event.data);
+        const newRequest: WebhookRequest = {
+          id: uuidv4(),
+          method: webhookData.method || 'POST',
+          path: webhookData.path || '/webhook',
+          timestamp: new Date(),
+          headers: webhookData.headers || {},
+          body: webhookData.body || {},
+          queryParams: webhookData.queryParams || {}
+        };
+
+        setRequests(prev => [newRequest, ...prev]);
+        
+        toast({
+          title: "New webhook received",
+          description: `${newRequest.method} request to ${newRequest.path}`,
+        });
+      } catch (error) {
+        console.error('Error processing webhook:', error);
+      }
     };
-    setRequests(prev => [...prev, sampleRequest]);
-  }, []);
+
+    eventSource.onerror = (error) => {
+      console.error('EventSource error:', error);
+      eventSource.close();
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, [isListening, toast]);
 
   const copyWebhookUrl = () => {
     navigator.clipboard.writeText(webhookUrl);
