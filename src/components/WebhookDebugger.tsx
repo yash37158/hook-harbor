@@ -9,6 +9,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
+// Get the current URL dynamically
 const DEFAULT_WEBHOOK_URL = `${window.location.protocol}//${window.location.host}/api/webhooks`;
 
 export type WebhookRequest = {
@@ -31,20 +32,35 @@ const WebhookDebugger = () => {
   useEffect(() => {
     if (!isListening) return;
 
-    const eventSource = new EventSource('/api/webhooks/events');
+    // Use the current origin for the EventSource URL
+    const eventSource = new EventSource(`${window.location.origin}/api/webhooks/events`);
     
     eventSource.onmessage = (event) => {
-      const request = JSON.parse(event.data);
-      setRequests(prev => [request, ...prev]);
-      toast({
-        title: "New webhook received",
-        description: `${request.method} request to ${request.path}`,
-      });
+      try {
+        const request = JSON.parse(event.data);
+        setRequests(prev => [request, ...prev]);
+        toast({
+          title: "New webhook received",
+          description: `${request.method} request to ${request.path}`,
+        });
+      } catch (error) {
+        console.error('Error parsing webhook data:', error);
+        toast({
+          title: "Error receiving webhook",
+          description: "There was an error processing the incoming webhook",
+          variant: "destructive",
+        });
+      }
     };
 
     eventSource.onerror = () => {
       console.log('SSE connection error');
       setIsListening(false);
+      toast({
+        title: "Connection Error",
+        description: "Lost connection to webhook server. Click the refresh button to reconnect.",
+        variant: "destructive",
+      });
     };
 
     return () => {
@@ -100,8 +116,15 @@ const WebhookDebugger = () => {
         <AlertCircle className="h-4 w-4" />
         <AlertTitle>Important Note</AlertTitle>
         <AlertDescription>
-          To receive webhooks, you need to send requests to <strong>{webhookUrl}</strong>, not webhook-test.com. 
-          The webhook-test.com URL sends requests to their server, not yours.
+          <div className="space-y-2">
+            <p>To receive webhooks, send HTTP requests to: <strong>{webhookUrl}</strong></p>
+            <p>This URL will work in both local development and when deployed. Make sure you're sending requests to this URL, not webhook-test.com.</p>
+            <p className="text-sm text-muted-foreground">
+              {window.location.hostname === 'localhost' ? 
+                '⚠️ You are in local development mode. Use tools like ngrok for testing with external services.' :
+                '✅ You are using the deployed version. This URL is publicly accessible.'}
+            </p>
+          </div>
         </AlertDescription>
       </Alert>
 
