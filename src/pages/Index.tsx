@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Webhook, Shield, Zap, RefreshCcw, AlertCircle } from "lucide-react";
+import { ArrowRight, Webhook, Shield, Zap, RefreshCcw, AlertCircle, Twitter } from "lucide-react";
 import WebhookDebugger from "@/components/WebhookDebugger";
 import TerminalAnimation from "@/components/TerminalAnimation";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -9,6 +9,15 @@ import Footer from "@/components/Footer";
 
 const Index = () => {
   const [showDebugger, setShowDebugger] = useState(false);
+
+  const shareOnTwitter = () => {
+    const text = "🔍 Check out this awesome Webhook Debugger tool! Test and monitor your webhooks in real-time. Perfect for developers! #WebDev #API #Webhooks";
+    const url = window.location.href;
+    window.open(
+      `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
+      "_blank"
+    );
+  };
 
   const features = [
     {
@@ -41,7 +50,6 @@ const Index = () => {
     <>
       <Navbar />
       <div className="min-h-screen bg-gradient-to-b from-background to-background/50">
-        {/* Hero Section */}
         <div className="container mx-auto px-4 pt-20 pb-16 text-center">
           <h1 className="text-4xl md:text-6xl font-mono font-bold tracking-tighter mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
             Webhook Debugger
@@ -50,7 +58,6 @@ const Index = () => {
             Test, debug, and monitor your webhooks with our powerful real-time debugger tool
           </p>
 
-          {/* Important Note Alert */}
           <Alert className="max-w-[700px] mx-auto mb-8 border-primary/50 bg-primary/10">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle className="font-mono">Important Note for Testing</AlertTitle>
@@ -66,14 +73,27 @@ const Index = () => {
           <div className="mb-12">
             <TerminalAnimation />
           </div>
-          <Button 
-            size="lg" 
-            onClick={() => setShowDebugger(true)}
-            className="group font-mono"
-          >
-            Launch Debugger
-            <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-          </Button>
+
+          <div className="flex items-center justify-center gap-4 mb-12">
+            <Button 
+              size="lg" 
+              onClick={() => setShowDebugger(true)}
+              className="group font-mono"
+            >
+              Launch Debugger
+              <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={shareOnTwitter}
+              className="group font-mono"
+            >
+              Share on Twitter
+              <Twitter className="ml-2 h-4 w-4 group-hover:scale-110 transition-transform" />
+            </Button>
+          </div>
         </div>
 
         {/* Features Grid */}
