@@ -5,10 +5,11 @@ import { Separator } from '@/components/ui/separator';
 import RequestList from './RequestList';
 import RequestDetails from './RequestDetails';
 import { Button } from '@/components/ui/button';
-import { Copy, RefreshCw, Trash2, Download } from 'lucide-react';
+import { Copy, RefreshCw, Trash2, Download, ExternalLink } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { v4 as uuidv4 } from 'uuid';
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // This is a test webhook URL that users can use to verify functionality
 const TEST_WEBHOOK_URL = 'https://webhook.site/';
@@ -31,27 +32,29 @@ const WebhookDebugger = () => {
 
   // Simulated webhook data for testing
   useEffect(() => {
-    // Add a sample webhook request for demonstration
-    const sampleRequest: WebhookRequest = {
-      id: uuidv4(),
-      method: 'POST',
-      path: '/webhook',
-      timestamp: new Date(),
-      headers: {
-        'Content-Type': 'application/json',
-        'User-Agent': 'Mozilla/5.0'
-      },
-      body: {
-        event: 'user.created',
-        data: {
-          id: 123,
-          name: 'John Doe',
-          email: 'john@example.com'
-        }
-      },
-      queryParams: {}
-    };
-    setRequests(prev => [...prev, sampleRequest]);
+    if (requests.length === 0) {
+      const sampleRequest: WebhookRequest = {
+        id: uuidv4(),
+        method: 'POST',
+        path: '/webhook',
+        timestamp: new Date(),
+        headers: {
+          'Content-Type': 'application/json',
+          'User-Agent': 'Mozilla/5.0'
+        },
+        body: {
+          event: 'user.created',
+          data: {
+            id: 123,
+            name: 'John Doe',
+            email: 'john@example.com'
+          }
+        },
+        queryParams: {}
+      };
+      setRequests([sampleRequest]);
+      setSelectedRequest(sampleRequest);
+    }
   }, []);
 
   const copyWebhookUrl = () => {
@@ -88,42 +91,61 @@ const WebhookDebugger = () => {
     });
   };
 
+  const openWebhookSite = () => {
+    window.open('https://webhook.site', '_blank');
+  };
+
   return (
     <div className="min-h-[calc(100vh-8rem)] p-6 flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold mb-2">Webhook URL</h2>
+      <div className="flex flex-col gap-4">
+        <div className="flex items-start justify-between">
+          <div className="space-y-2">
+            <h2 className="text-2xl font-semibold">Webhook Debugger</h2>
+            <p className="text-sm text-muted-foreground">
+              Test and debug your webhook integrations with ease
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="icon" onClick={clearRequests}>
+              <Trash2 className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="icon" onClick={downloadRequests}>
+              <Download className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" size="icon">
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        <Card className="p-4">
+          <h3 className="text-lg font-semibold mb-2">Webhook URL</h3>
           <div className="flex items-center gap-2">
             <Input 
               value={webhookUrl}
               onChange={(e) => setWebhookUrl(e.target.value)}
-              className="min-w-[400px] font-mono text-sm"
+              className="font-mono text-sm"
               placeholder="Enter webhook URL"
             />
             <Button variant="outline" size="icon" onClick={copyWebhookUrl}>
               <Copy className="h-4 w-4" />
             </Button>
+            <Button variant="outline" size="icon" onClick={openWebhookSite}>
+              <ExternalLink className="h-4 w-4" />
+            </Button>
           </div>
-          <p className="text-sm text-muted-foreground mt-2">
-            Use this URL to test your webhook integration. You can create a free test URL at webhook.site
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="icon" onClick={clearRequests}>
-            <Trash2 className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="icon" onClick={downloadRequests}>
-            <Download className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" size="icon">
-            <RefreshCw className="h-4 w-4" />
-          </Button>
-        </div>
+          <Alert className="mt-4">
+            <AlertDescription>
+              Use <span className="font-mono">webhook.site</span> to generate a free test URL and see incoming webhook requests in real-time.
+              Click the external link button to visit webhook.site.
+            </AlertDescription>
+          </Alert>
+        </Card>
       </div>
 
       <div className="flex gap-6 flex-1">
         <Card className="w-1/3">
-          <ScrollArea className="h-[calc(100vh-16rem)]">
+          <ScrollArea className="h-[calc(100vh-24rem)]">
             <RequestList
               requests={requests}
               selectedRequest={selectedRequest}
@@ -133,7 +155,7 @@ const WebhookDebugger = () => {
         </Card>
 
         <Card className="flex-1">
-          <ScrollArea className="h-[calc(100vh-16rem)]">
+          <ScrollArea className="h-[calc(100vh-24rem)]">
             <RequestDetails request={selectedRequest} />
           </ScrollArea>
         </Card>
