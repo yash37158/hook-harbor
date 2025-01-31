@@ -14,7 +14,7 @@ const Navbar = () => {
           <div className="flex items-center space-x-4">
             <Button variant="outline" size="icon" asChild>
               <a 
-                href="https://github.com/yash-sharma" 
+                href="https://github.com/yash37158" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="hover:scale-105 transition-transform"
