@@ -10,7 +10,8 @@ import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { v4 as uuidv4 } from 'uuid';
 
-const DEFAULT_WEBHOOK_URL = `https://${window.location.hostname}/webhook`;
+// This is a test webhook URL that users can use to verify functionality
+const TEST_WEBHOOK_URL = 'https://webhook.site/';
 
 export type WebhookRequest = {
   id: string;
@@ -25,7 +26,7 @@ export type WebhookRequest = {
 const WebhookDebugger = () => {
   const [requests, setRequests] = useState<WebhookRequest[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<WebhookRequest | null>(null);
-  const [webhookUrl, setWebhookUrl] = useState(DEFAULT_WEBHOOK_URL);
+  const [webhookUrl, setWebhookUrl] = useState(TEST_WEBHOOK_URL);
   const { toast } = useToast();
 
   // Simulated webhook data for testing
@@ -57,7 +58,7 @@ const WebhookDebugger = () => {
     navigator.clipboard.writeText(webhookUrl);
     toast({
       title: "URL copied to clipboard",
-      description: "Your webhook URL has been copied to the clipboard.",
+      description: "Your webhook URL has been copied to the clipboard. You can use this URL to test webhook functionality.",
     });
   };
 
@@ -97,12 +98,15 @@ const WebhookDebugger = () => {
               value={webhookUrl}
               onChange={(e) => setWebhookUrl(e.target.value)}
               className="min-w-[400px] font-mono text-sm"
-              placeholder={DEFAULT_WEBHOOK_URL}
+              placeholder="Enter webhook URL"
             />
             <Button variant="outline" size="icon" onClick={copyWebhookUrl}>
               <Copy className="h-4 w-4" />
             </Button>
           </div>
+          <p className="text-sm text-muted-foreground mt-2">
+            Use this URL to test your webhook integration. You can create a free test URL at webhook.site
+          </p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="icon" onClick={clearRequests}>
