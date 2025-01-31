@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Webhook, Shield, Zap, RefreshCcw } from "lucide-react";
+import { ArrowRight, Webhook, Shield, Zap, RefreshCcw, AlertCircle } from "lucide-react";
 import WebhookDebugger from "@/components/WebhookDebugger";
 import TerminalAnimation from "@/components/TerminalAnimation";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useState } from "react";
 
 const Index = () => {
@@ -44,6 +45,20 @@ const Index = () => {
         <p className="text-xl md:text-2xl text-muted-foreground max-w-[700px] mx-auto mb-8 font-mono">
           Test, debug, and monitor your webhooks with our powerful real-time debugger tool
         </p>
+
+        {/* Important Note Alert */}
+        <Alert className="max-w-[700px] mx-auto mb-8 border-primary/50 bg-primary/10">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle className="font-mono">Important Note for Testing</AlertTitle>
+          <AlertDescription className="font-mono text-sm mt-2">
+            To test the webhook debugger, you can use the JSONPlaceholder API:
+            <code className="block bg-background/50 p-2 mt-2 rounded">
+              https://jsonplaceholder.typicode.com/posts/
+            </code>
+            This endpoint provides mock data that simulates real webhook responses, perfect for testing the debugger's functionality.
+          </AlertDescription>
+        </Alert>
+
         <div className="mb-12">
           <TerminalAnimation />
         </div>
