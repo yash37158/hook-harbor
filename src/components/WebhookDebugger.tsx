@@ -1,28 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 import RequestList from './RequestList';
 import RequestDetails from './RequestDetails';
 import { Button } from '@/components/ui/button';
-import { Copy, RefreshCw, Trash2, Download, AlertCircle } from 'lucide-react';
+import { Copy, RefreshCw, Trash2, Download } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { v4 as uuidv4 } from 'uuid';
 
-// Get base URL for the current environment
-const getBaseUrl = () => {
-  if (typeof window === 'undefined') return '';
-  
-  // For local development
-  if (window.location.hostname === 'localhost') {
-    return `${window.location.protocol}//${window.location.host}`;
-  }
-  
-  // For deployed environments
-  return `${window.location.protocol}//${window.location.hostname}`;
-};
-
-const DEFAULT_WEBHOOK_URL = `${getBaseUrl()}/api/webhooks`;
+const DEFAULT_WEBHOOK_URL = `https://${window.location.hostname}/webhook`;
 
 export type WebhookRequest = {
   id: string;
@@ -38,48 +26,32 @@ const WebhookDebugger = () => {
   const [requests, setRequests] = useState<WebhookRequest[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<WebhookRequest | null>(null);
   const [webhookUrl, setWebhookUrl] = useState(DEFAULT_WEBHOOK_URL);
-  const [isListening, setIsListening] = useState(true);
   const { toast } = useToast();
 
+  // Simulated webhook data for testing
   useEffect(() => {
-    if (!isListening) return;
-
-    // Create EventSource URL based on the current environment
-    const eventSourceUrl = `${getBaseUrl()}/api/webhooks/events`;
-    const eventSource = new EventSource(eventSourceUrl);
-    
-    eventSource.onmessage = (event) => {
-      try {
-        const request = JSON.parse(event.data);
-        setRequests(prev => [request, ...prev]);
-        toast({
-          title: "New webhook received",
-          description: `${request.method} request to ${request.path}`,
-        });
-      } catch (error) {
-        console.error('Error parsing webhook data:', error);
-        toast({
-          title: "Error receiving webhook",
-          description: "There was an error processing the incoming webhook",
-          variant: "destructive",
-        });
-      }
+    // Add a sample webhook request for demonstration
+    const sampleRequest: WebhookRequest = {
+      id: uuidv4(),
+      method: 'POST',
+      path: '/webhook',
+      timestamp: new Date(),
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'Mozilla/5.0'
+      },
+      body: {
+        event: 'user.created',
+        data: {
+          id: 123,
+          name: 'John Doe',
+          email: 'john@example.com'
+        }
+      },
+      queryParams: {}
     };
-
-    eventSource.onerror = () => {
-      console.log('SSE connection error');
-      setIsListening(false);
-      toast({
-        title: "Connection Error",
-        description: "Lost connection to webhook server. Click the refresh button to reconnect.",
-        variant: "destructive",
-      });
-    };
-
-    return () => {
-      eventSource.close();
-    };
-  }, [isListening]);
+    setRequests(prev => [...prev, sampleRequest]);
+  }, []);
 
   const copyWebhookUrl = () => {
     navigator.clipboard.writeText(webhookUrl);
@@ -115,42 +87,8 @@ const WebhookDebugger = () => {
     });
   };
 
-  const toggleListening = () => {
-    setIsListening(!isListening);
-    toast({
-      title: isListening ? "Stopped listening" : "Started listening",
-      description: isListening ? "No longer receiving webhook requests." : "Now receiving webhook requests.",
-    });
-  };
-
   return (
     <div className="min-h-[calc(100vh-8rem)] p-6 flex flex-col gap-6">
-      <Alert>
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Webhook Testing Guide</AlertTitle>
-        <AlertDescription>
-          <div className="space-y-2">
-            <p>Current webhook URL: <strong>{webhookUrl}</strong></p>
-            <p>You can:</p>
-            <ul className="list-disc pl-6">
-              <li>Use this URL directly for testing in deployed environments</li>
-              <li>For local development:
-                <ul className="list-disc pl-6 mt-1">
-                  <li>Use tools like ngrok to expose your localhost</li>
-                  <li>Send requests directly to {webhookUrl}</li>
-                  <li>Test with tools like Postman or curl</li>
-                </ul>
-              </li>
-            </ul>
-            <p className="text-sm text-muted-foreground mt-2">
-              {window.location.hostname === 'localhost' ? 
-                '⚠️ Local Development Mode: Consider using ngrok for external services.' :
-                '✅ Deployed Environment: URL is publicly accessible.'}
-            </p>
-          </div>
-        </AlertDescription>
-      </Alert>
-
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-semibold mb-2">Webhook URL</h2>
@@ -173,12 +111,8 @@ const WebhookDebugger = () => {
           <Button variant="outline" size="icon" onClick={downloadRequests}>
             <Download className="h-4 w-4" />
           </Button>
-          <Button 
-            variant={isListening ? "default" : "outline"} 
-            size="icon" 
-            onClick={toggleListening}
-          >
-            <RefreshCw className={`h-4 w-4 ${isListening ? 'animate-spin' : ''}`} />
+          <Button variant="outline" size="icon">
+            <RefreshCw className="h-4 w-4" />
           </Button>
         </div>
       </div>
