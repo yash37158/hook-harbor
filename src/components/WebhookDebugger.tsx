@@ -9,8 +9,20 @@ import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-// Get the current URL dynamically without port number for production
-const DEFAULT_WEBHOOK_URL = `${window.location.protocol}//${window.location.hostname}/api/webhooks`;
+// Get base URL for the current environment
+const getBaseUrl = () => {
+  if (typeof window === 'undefined') return '';
+  
+  // For local development
+  if (window.location.hostname === 'localhost') {
+    return `${window.location.protocol}//${window.location.host}`;
+  }
+  
+  // For deployed environments
+  return `${window.location.protocol}//${window.location.hostname}`;
+};
+
+const DEFAULT_WEBHOOK_URL = `${getBaseUrl()}/api/webhooks`;
 
 export type WebhookRequest = {
   id: string;
@@ -32,8 +44,9 @@ const WebhookDebugger = () => {
   useEffect(() => {
     if (!isListening) return;
 
-    // Use the hostname without port for EventSource URL
-    const eventSource = new EventSource(`${window.location.protocol}//${window.location.hostname}/api/webhooks/events`);
+    // Create EventSource URL based on the current environment
+    const eventSourceUrl = `${getBaseUrl()}/api/webhooks/events`;
+    const eventSource = new EventSource(eventSourceUrl);
     
     eventSource.onmessage = (event) => {
       try {
@@ -114,15 +127,25 @@ const WebhookDebugger = () => {
     <div className="min-h-[calc(100vh-8rem)] p-6 flex flex-col gap-6">
       <Alert>
         <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Important Note</AlertTitle>
+        <AlertTitle>Webhook Testing Guide</AlertTitle>
         <AlertDescription>
           <div className="space-y-2">
-            <p>To receive webhooks, send HTTP requests to: <strong>{webhookUrl}</strong></p>
-            <p>This URL will work in both local development and when deployed. Make sure you're sending requests to this URL, not webhook-test.com.</p>
-            <p className="text-sm text-muted-foreground">
+            <p>Current webhook URL: <strong>{webhookUrl}</strong></p>
+            <p>You can:</p>
+            <ul className="list-disc pl-6">
+              <li>Use this URL directly for testing in deployed environments</li>
+              <li>For local development:
+                <ul className="list-disc pl-6 mt-1">
+                  <li>Use tools like ngrok to expose your localhost</li>
+                  <li>Send requests directly to {webhookUrl}</li>
+                  <li>Test with tools like Postman or curl</li>
+                </ul>
+              </li>
+            </ul>
+            <p className="text-sm text-muted-foreground mt-2">
               {window.location.hostname === 'localhost' ? 
-                '⚠️ You are in local development mode. Use tools like ngrok for testing with external services.' :
-                '✅ You are using the deployed version. This URL is publicly accessible.'}
+                '⚠️ Local Development Mode: Consider using ngrok for external services.' :
+                '✅ Deployed Environment: URL is publicly accessible.'}
             </p>
           </div>
         </AlertDescription>
@@ -130,7 +153,7 @@ const WebhookDebugger = () => {
 
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold mb-2">Your Webhook URL</h2>
+          <h2 className="text-xl font-semibold mb-2">Webhook URL</h2>
           <div className="flex items-center gap-2">
             <Input 
               value={webhookUrl}
