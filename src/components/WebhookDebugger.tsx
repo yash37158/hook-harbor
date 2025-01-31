@@ -5,14 +5,11 @@ import { Separator } from '@/components/ui/separator';
 import RequestList from './RequestList';
 import RequestDetails from './RequestDetails';
 import { Button } from '@/components/ui/button';
-import { Copy, RefreshCw, Trash2, Download, ExternalLink } from 'lucide-react';
+import { Copy, RefreshCw, Trash2, Download } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { v4 as uuidv4 } from 'uuid';
-import { Alert, AlertDescription } from "@/components/ui/alert";
-
-// This is a test webhook URL that users can use to verify functionality
-const TEST_WEBHOOK_URL = 'https://webhook.site/';
+import { Badge } from "@/components/ui/badge";
 
 export type WebhookRequest = {
   id: string;
@@ -27,7 +24,8 @@ export type WebhookRequest = {
 const WebhookDebugger = () => {
   const [requests, setRequests] = useState<WebhookRequest[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<WebhookRequest | null>(null);
-  const [webhookUrl, setWebhookUrl] = useState(TEST_WEBHOOK_URL);
+  const [webhookUrl, setWebhookUrl] = useState('');
+  const [isListening, setIsListening] = useState(false);
   const { toast } = useToast();
 
   // Simulated webhook data for testing
@@ -57,11 +55,37 @@ const WebhookDebugger = () => {
     }
   }, []);
 
+  const toggleListening = () => {
+    if (!webhookUrl) {
+      toast({
+        title: "URL Required",
+        description: "Please enter a webhook URL before starting to listen.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsListening(!isListening);
+    toast({
+      title: isListening ? "Stopped Listening" : "Started Listening",
+      description: isListening 
+        ? "Webhook listener has been stopped." 
+        : "Now listening for webhook requests at the specified URL.",
+    });
+  };
+
   const copyWebhookUrl = () => {
+    if (!webhookUrl) {
+      toast({
+        title: "No URL to copy",
+        description: "Please enter a webhook URL first.",
+        variant: "destructive",
+      });
+      return;
+    }
     navigator.clipboard.writeText(webhookUrl);
     toast({
       title: "URL copied to clipboard",
-      description: "Your webhook URL has been copied to the clipboard. You can use this URL to test webhook functionality.",
+      description: "Your webhook URL has been copied to the clipboard.",
     });
   };
 
@@ -91,10 +115,6 @@ const WebhookDebugger = () => {
     });
   };
 
-  const openWebhookSite = () => {
-    window.open('https://webhook.site', '_blank');
-  };
-
   return (
     <div className="min-h-[calc(100vh-8rem)] p-6 flex flex-col gap-6">
       <div className="flex flex-col gap-4">
@@ -119,27 +139,32 @@ const WebhookDebugger = () => {
         </div>
 
         <Card className="p-4">
-          <h3 className="text-lg font-semibold mb-2">Webhook URL</h3>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-lg font-semibold">Webhook URL</h3>
+            <Badge 
+              variant={isListening ? "default" : "secondary"}
+              className="ml-2"
+            >
+              {isListening ? "Listening" : "Not Listening"}
+            </Badge>
+          </div>
           <div className="flex items-center gap-2">
             <Input 
               value={webhookUrl}
               onChange={(e) => setWebhookUrl(e.target.value)}
               className="font-mono text-sm"
-              placeholder="Enter webhook URL"
+              placeholder="Enter your webhook URL"
             />
             <Button variant="outline" size="icon" onClick={copyWebhookUrl}>
               <Copy className="h-4 w-4" />
             </Button>
-            <Button variant="outline" size="icon" onClick={openWebhookSite}>
-              <ExternalLink className="h-4 w-4" />
+            <Button 
+              variant={isListening ? "destructive" : "default"}
+              onClick={toggleListening}
+            >
+              {isListening ? "Stop" : "Start"}
             </Button>
           </div>
-          <Alert className="mt-4">
-            <AlertDescription>
-              Use <span className="font-mono">webhook.site</span> to generate a free test URL and see incoming webhook requests in real-time.
-              Click the external link button to visit webhook.site.
-            </AlertDescription>
-          </Alert>
         </Card>
       </div>
 
