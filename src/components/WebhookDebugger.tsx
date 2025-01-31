@@ -30,7 +30,9 @@ const WebhookDebugger = () => {
   const handleKeyPress = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && webhookUrl) {
       try {
-        const response = await fetch(webhookUrl);
+        // Add CORS proxy to handle the request
+        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(webhookUrl)}`;
+        const response = await fetch(proxyUrl);
         const data = await response.json();
         
         const newRequest: WebhookRequest = {
@@ -38,8 +40,8 @@ const WebhookDebugger = () => {
           method: 'GET',
           path: webhookUrl,
           timestamp: new Date(),
-          headers: Object.fromEntries(response.headers.entries()),
-          body: data,
+          headers: { 'Content-Type': 'application/json' }, // Simplified headers
+          body: data.contents ? JSON.parse(data.contents) : data,
           queryParams: {}
         };
 
@@ -74,7 +76,9 @@ const WebhookDebugger = () => {
     
     if (!isListening) {
       try {
-        const response = await fetch(webhookUrl);
+        // Add CORS proxy to handle the request
+        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(webhookUrl)}`;
+        const response = await fetch(proxyUrl);
         const data = await response.json();
         
         const newRequest: WebhookRequest = {
@@ -82,8 +86,8 @@ const WebhookDebugger = () => {
           method: 'GET',
           path: webhookUrl,
           timestamp: new Date(),
-          headers: Object.fromEntries(response.headers.entries()),
-          body: data,
+          headers: { 'Content-Type': 'application/json' }, // Simplified headers
+          body: data.contents ? JSON.parse(data.contents) : data,
           queryParams: {}
         };
 
@@ -175,52 +179,53 @@ const WebhookDebugger = () => {
           </div>
         </div>
 
-      <Card className="p-4">
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="text-lg font-semibold">Webhook URL</h3>
-          <Badge 
-            variant={isListening ? "default" : "secondary"}
-            className="ml-2"
-          >
-            {isListening ? "Listening" : "Not Listening"}
-          </Badge>
-        </div>
-        <div className="flex items-center gap-2">
-          <Input 
-            value={webhookUrl}
-            onChange={(e) => setWebhookUrl(e.target.value)}
-            onKeyPress={handleKeyPress}
-            className="font-mono text-sm"
-            placeholder="Enter your webhook URL"
-          />
-          <Button variant="outline" size="icon" onClick={copyWebhookUrl}>
-            <Copy className="h-4 w-4" />
-          </Button>
-          <Button 
-            variant={isListening ? "destructive" : "default"}
-            onClick={toggleListening}
-          >
-            {isListening ? "Stop" : "Start"}
-          </Button>
-        </div>
-      </Card>
-
-      <div className="flex gap-6 flex-1">
-        <Card className="w-1/3">
-          <ScrollArea className="h-[calc(100vh-24rem)]">
-            <RequestList
-              requests={requests}
-              selectedRequest={selectedRequest}
-              onSelectRequest={setSelectedRequest}
+        <Card className="p-4">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-lg font-semibold">Webhook URL</h3>
+            <Badge 
+              variant={isListening ? "default" : "secondary"}
+              className="ml-2"
+            >
+              {isListening ? "Listening" : "Not Listening"}
+            </Badge>
+          </div>
+          <div className="flex items-center gap-2">
+            <Input 
+              value={webhookUrl}
+              onChange={(e) => setWebhookUrl(e.target.value)}
+              onKeyPress={handleKeyPress}
+              className="font-mono text-sm"
+              placeholder="Enter your webhook URL"
             />
-          </ScrollArea>
+            <Button variant="outline" size="icon" onClick={copyWebhookUrl}>
+              <Copy className="h-4 w-4" />
+            </Button>
+            <Button 
+              variant={isListening ? "destructive" : "default"}
+              onClick={toggleListening}
+            >
+              {isListening ? "Stop" : "Start"}
+            </Button>
+          </div>
         </Card>
 
-        <Card className="flex-1">
-          <ScrollArea className="h-[calc(100vh-24rem)]">
-            <RequestDetails request={selectedRequest} />
-          </ScrollArea>
-        </Card>
+        <div className="flex gap-6 flex-1">
+          <Card className="w-1/3">
+            <ScrollArea className="h-[calc(100vh-24rem)]">
+              <RequestList
+                requests={requests}
+                selectedRequest={selectedRequest}
+                onSelectRequest={setSelectedRequest}
+              />
+            </ScrollArea>
+          </Card>
+
+          <Card className="flex-1">
+            <ScrollArea className="h-[calc(100vh-24rem)]">
+              <RequestDetails request={selectedRequest} />
+            </ScrollArea>
+          </Card>
+        </div>
       </div>
     </div>
   );
