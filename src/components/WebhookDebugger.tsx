@@ -9,8 +9,8 @@ import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-// Get the current URL dynamically
-const DEFAULT_WEBHOOK_URL = `${window.location.protocol}//${window.location.host}/api/webhooks`;
+// Get the current URL dynamically without port number for production
+const DEFAULT_WEBHOOK_URL = `${window.location.protocol}//${window.location.hostname}/api/webhooks`;
 
 export type WebhookRequest = {
   id: string;
@@ -32,8 +32,8 @@ const WebhookDebugger = () => {
   useEffect(() => {
     if (!isListening) return;
 
-    // Use the current origin for the EventSource URL
-    const eventSource = new EventSource(`${window.location.origin}/api/webhooks/events`);
+    // Use the hostname without port for EventSource URL
+    const eventSource = new EventSource(`${window.location.protocol}//${window.location.hostname}/api/webhooks/events`);
     
     eventSource.onmessage = (event) => {
       try {
