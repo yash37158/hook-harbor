@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import RequestList from './RequestList';
@@ -20,6 +20,8 @@ export type WebhookRequest = {
   queryParams: Record<string, string>;
 };
 
+const POLLING_INTERVAL = 5000; // Poll every 5 seconds
+
 const WebhookDebugger = () => {
   const [requests, setRequests] = useState<WebhookRequest[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<WebhookRequest | null>(null);
@@ -27,32 +29,76 @@ const WebhookDebugger = () => {
   const [isListening, setIsListening] = useState(false);
   const { toast } = useToast();
 
+  const fetchWebhookData = useCallback(async () => {
+    if (!webhookUrl) return;
+    
+    try {
+      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(webhookUrl)}`;
+      const response = await fetch(proxyUrl);
+      const data = await response.json();
+      
+      const newRequest: WebhookRequest = {
+        id: uuidv4(),
+        method: 'GET',
+        path: webhookUrl,
+        timestamp: new Date(),
+        headers: { 'Content-Type': 'application/json' },
+        body: data.contents ? JSON.parse(data.contents) : data,
+        queryParams: {}
+      };
+
+      setRequests(prev => {
+        // Check if this request is different from the last one
+        const lastRequest = prev[0];
+        if (lastRequest && JSON.stringify(lastRequest.body) === JSON.stringify(newRequest.body)) {
+          return prev;
+        }
+        return [newRequest, ...prev];
+      });
+      
+      return newRequest;
+    } catch (error) {
+      console.error('Error fetching webhook data:', error);
+      return null;
+    }
+  }, [webhookUrl]);
+
+  useEffect(() => {
+    let pollInterval: NodeJS.Timeout;
+
+    if (isListening && webhookUrl) {
+      // Initial fetch
+      fetchWebhookData();
+      
+      // Set up polling
+      pollInterval = setInterval(async () => {
+        const newRequest = await fetchWebhookData();
+        if (newRequest) {
+          toast({
+            title: "New Request Received",
+            description: "A new webhook request has been logged.",
+          });
+        }
+      }, POLLING_INTERVAL);
+    }
+
+    return () => {
+      if (pollInterval) {
+        clearInterval(pollInterval);
+      }
+    };
+  }, [isListening, webhookUrl, fetchWebhookData, toast]);
+
   const handleKeyPress = async (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && webhookUrl) {
-      try {
-        // Add CORS proxy to handle the request
-        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(webhookUrl)}`;
-        const response = await fetch(proxyUrl);
-        const data = await response.json();
-        
-        const newRequest: WebhookRequest = {
-          id: uuidv4(),
-          method: 'GET',
-          path: webhookUrl,
-          timestamp: new Date(),
-          headers: { 'Content-Type': 'application/json' }, // Simplified headers
-          body: data.contents ? JSON.parse(data.contents) : data,
-          queryParams: {}
-        };
-
-        setRequests(prev => [newRequest, ...prev]);
+      const newRequest = await fetchWebhookData();
+      if (newRequest) {
         setSelectedRequest(newRequest);
-        
         toast({
           title: "Request Successful",
           description: "New webhook request has been received and logged.",
         });
-      } catch (error) {
+      } else {
         toast({
           title: "Request Failed",
           description: "Failed to make the webhook request. Please check the URL and try again.",
@@ -72,33 +118,18 @@ const WebhookDebugger = () => {
       return;
     }
 
-    setIsListening(!isListening);
+    const newIsListening = !isListening;
+    setIsListening(newIsListening);
     
-    if (!isListening) {
-      try {
-        // Add CORS proxy to handle the request
-        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(webhookUrl)}`;
-        const response = await fetch(proxyUrl);
-        const data = await response.json();
-        
-        const newRequest: WebhookRequest = {
-          id: uuidv4(),
-          method: 'GET',
-          path: webhookUrl,
-          timestamp: new Date(),
-          headers: { 'Content-Type': 'application/json' }, // Simplified headers
-          body: data.contents ? JSON.parse(data.contents) : data,
-          queryParams: {}
-        };
-
-        setRequests(prev => [newRequest, ...prev]);
+    if (newIsListening) {
+      const newRequest = await fetchWebhookData();
+      if (newRequest) {
         setSelectedRequest(newRequest);
-        
         toast({
           title: "Started Listening",
           description: "Successfully connected to the webhook URL.",
         });
-      } catch (error) {
+      } else {
         setIsListening(false);
         toast({
           title: "Connection Failed",
@@ -173,7 +204,7 @@ const WebhookDebugger = () => {
             <Button variant="outline" size="icon" onClick={downloadRequests}>
               <Download className="h-4 w-4" />
             </Button>
-            <Button variant="outline" size="icon">
+            <Button variant="outline" size="icon" onClick={fetchWebhookData}>
               <RefreshCw className="h-4 w-4" />
             </Button>
           </div>
