@@ -13,7 +13,7 @@ const Footer = () => {
             <span className="text-green-500">$</span> echo "Made with{" "}
             <Heart className="inline-block w-4 h-4 text-red-500" /> by{" "}
             <a
-              href="https://github.com/yash-sharma"
+              href="https://github.com/yash37158"
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary hover:underline"
