@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
 import RequestList from './RequestList';
 import RequestDetails from './RequestDetails';
 import { Button } from '@/components/ui/button';
@@ -28,34 +27,40 @@ const WebhookDebugger = () => {
   const [isListening, setIsListening] = useState(false);
   const { toast } = useToast();
 
-  // Simulated webhook data for testing
-  useEffect(() => {
-    if (requests.length === 0) {
-      const sampleRequest: WebhookRequest = {
-        id: uuidv4(),
-        method: 'POST',
-        path: '/webhook',
-        timestamp: new Date(),
-        headers: {
-          'Content-Type': 'application/json',
-          'User-Agent': 'Mozilla/5.0'
-        },
-        body: {
-          event: 'user.created',
-          data: {
-            id: 123,
-            name: 'John Doe',
-            email: 'john@example.com'
-          }
-        },
-        queryParams: {}
-      };
-      setRequests([sampleRequest]);
-      setSelectedRequest(sampleRequest);
-    }
-  }, []);
+  const handleKeyPress = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && webhookUrl) {
+      try {
+        const response = await fetch(webhookUrl);
+        const data = await response.json();
+        
+        const newRequest: WebhookRequest = {
+          id: uuidv4(),
+          method: 'GET',
+          path: webhookUrl,
+          timestamp: new Date(),
+          headers: Object.fromEntries(response.headers.entries()),
+          body: data,
+          queryParams: {}
+        };
 
-  const toggleListening = () => {
+        setRequests(prev => [newRequest, ...prev]);
+        setSelectedRequest(newRequest);
+        
+        toast({
+          title: "Request Successful",
+          description: "New webhook request has been received and logged.",
+        });
+      } catch (error) {
+        toast({
+          title: "Request Failed",
+          description: "Failed to make the webhook request. Please check the URL and try again.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const toggleListening = async () => {
     if (!webhookUrl) {
       toast({
         title: "URL Required",
@@ -64,13 +69,45 @@ const WebhookDebugger = () => {
       });
       return;
     }
+
     setIsListening(!isListening);
-    toast({
-      title: isListening ? "Stopped Listening" : "Started Listening",
-      description: isListening 
-        ? "Webhook listener has been stopped." 
-        : "Now listening for webhook requests at the specified URL.",
-    });
+    
+    if (!isListening) {
+      try {
+        const response = await fetch(webhookUrl);
+        const data = await response.json();
+        
+        const newRequest: WebhookRequest = {
+          id: uuidv4(),
+          method: 'GET',
+          path: webhookUrl,
+          timestamp: new Date(),
+          headers: Object.fromEntries(response.headers.entries()),
+          body: data,
+          queryParams: {}
+        };
+
+        setRequests(prev => [newRequest, ...prev]);
+        setSelectedRequest(newRequest);
+        
+        toast({
+          title: "Started Listening",
+          description: "Successfully connected to the webhook URL.",
+        });
+      } catch (error) {
+        setIsListening(false);
+        toast({
+          title: "Connection Failed",
+          description: "Failed to connect to the webhook URL. Please check the URL and try again.",
+          variant: "destructive",
+        });
+      }
+    } else {
+      toast({
+        title: "Stopped Listening",
+        description: "Webhook listener has been stopped.",
+      });
+    }
   };
 
   const copyWebhookUrl = () => {
@@ -138,35 +175,35 @@ const WebhookDebugger = () => {
           </div>
         </div>
 
-        <Card className="p-4">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-lg font-semibold">Webhook URL</h3>
-            <Badge 
-              variant={isListening ? "default" : "secondary"}
-              className="ml-2"
-            >
-              {isListening ? "Listening" : "Not Listening"}
-            </Badge>
-          </div>
-          <div className="flex items-center gap-2">
-            <Input 
-              value={webhookUrl}
-              onChange={(e) => setWebhookUrl(e.target.value)}
-              className="font-mono text-sm"
-              placeholder="Enter your webhook URL"
-            />
-            <Button variant="outline" size="icon" onClick={copyWebhookUrl}>
-              <Copy className="h-4 w-4" />
-            </Button>
-            <Button 
-              variant={isListening ? "destructive" : "default"}
-              onClick={toggleListening}
-            >
-              {isListening ? "Stop" : "Start"}
-            </Button>
-          </div>
-        </Card>
-      </div>
+      <Card className="p-4">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-lg font-semibold">Webhook URL</h3>
+          <Badge 
+            variant={isListening ? "default" : "secondary"}
+            className="ml-2"
+          >
+            {isListening ? "Listening" : "Not Listening"}
+          </Badge>
+        </div>
+        <div className="flex items-center gap-2">
+          <Input 
+            value={webhookUrl}
+            onChange={(e) => setWebhookUrl(e.target.value)}
+            onKeyPress={handleKeyPress}
+            className="font-mono text-sm"
+            placeholder="Enter your webhook URL"
+          />
+          <Button variant="outline" size="icon" onClick={copyWebhookUrl}>
+            <Copy className="h-4 w-4" />
+          </Button>
+          <Button 
+            variant={isListening ? "destructive" : "default"}
+            onClick={toggleListening}
+          >
+            {isListening ? "Stop" : "Start"}
+          </Button>
+        </div>
+      </Card>
 
       <div className="flex gap-6 flex-1">
         <Card className="w-1/3">
